@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Builder - Drag & Drop</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #ec4899;
+            --accent: #14b8a6;
+            --bg-main: #0f0f1a;
+            --bg-surface: #1a1a2e;
+            --bg-elevated: #242442;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border: #2d2d4a;
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-columns: 280px 1fr 320px;
+            height: 100vh;
+            gap: 1px;
+            background: var(--border);
+        }
+
+        /* Header */
+        .header {
+            grid-column: 1 / -1;
+            background: var(--bg-surface);
+            padding: 1.25rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.625rem 1.25rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-surface);
+            border-color: var(--primary);
+        }
+
+        /* Sidebar - Field Palette */
+        .sidebar {
+            background: var(--bg-surface);
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .sidebar h3 {
+            font-family: 'Syne', sans-serif;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .field-palette {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .field-item {
+            background: var(--bg-elevated);
+            padding: 1rem;
+            border-radius: 0.625rem;
+            border: 1px solid var(--border);
+            cursor: grab;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .field-item:hover {
+            border-color: var(--primary);
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+        }
+
+        .field-item:active {
+            cursor: grabbing;
+        }
+
+        .field-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .field-info {
+            flex: 1;
+        }
+
+        .field-name {
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .field-desc {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        /* Canvas */
+        .canvas {
+            background: var(--bg-main);
+            padding: 2rem;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .canvas-inner {
+            max-width: 700px;
+            margin: 0 auto;
+            background: var(--bg-surface);
+            border-radius: 1rem;
+            padding: 2.5rem;
+            min-height: 500px;
+            border: 2px dashed var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .canvas-inner.drag-over {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .canvas-placeholder {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .canvas-placeholder-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .form-element {
+            background: var(--bg-elevated);
+            border: 2px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.25rem;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-element:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.1);
+        }
+
+        .form-element.selected {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        .form-element-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .form-element-label {
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+        }
+
+        .form-element-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .icon-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            border-radius: 0.375rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            font-size: 0.875rem;
+        }
+
+        .icon-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg-main);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            color: var(--text-primary);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            padding-right: 2.5rem;
+        }
+
+        /* Properties Panel */
+        .properties-panel {
+            background: var(--bg-surface);
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .properties-panel h3 {
+            font-family: 'Syne', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .property-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .property-label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .property-input {
+            width: 100%;
+            padding: 0.625rem;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            color: var(--text-primary);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.875rem;
+        }
+
+        .property-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal {
+            background: var(--bg-surface);
+            border-radius: 1rem;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            justify-content: flex-end;
+        }
+
+        .code-preview {
+            background: var(--bg-main);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            overflow-x: auto;
+            white-space: pre;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .app-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
+            }
+
+            .sidebar, .properties-panel {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">✦ FormCraft</div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" id="clearBtn">Clear All</button>
+                <button class="btn btn-secondary" id="previewBtn">Preview</button>
+                <button class="btn btn-primary" id="exportBtn">Export HTML</button>
+            </div>
+        </div>
+
+        <!-- Sidebar - Field Palette -->
+        <div class="sidebar">
+            <h3>Form Fields</h3>
+            <div class="field-palette">
+                <div class="field-item" draggable="true" data-type="text">
+                    <div class="field-icon" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">📝</div>
+                    <div class="field-info">
+                        <div class="field-name">Text Input</div>
+                        <div class="field-desc">Single line text</div>
+                    </div>
+                </div>
+
+                <div class="field-item" draggable="true" data-type="email">
+                    <div class="field-icon" style="background: linear-gradient(135deg, #ec4899, #f43f5e);">📧</div>
+                    <div class="field-info">
+                        <div class="field-name">Email</div>
+                        <div class="field-desc">Email address</div>
+                    </div>
+                </div>
+
+                <div class="field-item" draggable="true" data-type="number">
+                    <div class="field-icon" style="background: linear-gradient(135deg, #14b8a6, #06b6d4);">🔢</div>
+                    <div class="field-info">
+                        <div class="field-name">Number</div>
+                        <div class="field-desc">Numeric input</div>
+                    </div>
+                </div>
+
+                <div class="field-item" draggable="true" data-type="textarea">
+                    <div class="field-icon" style="background: linear-gradient(135deg, #f59e0b, #eab308);">📄</div>
+                    <div class="field-info">
+                        <div class="field-name">Text Area</div>
+                        <div class="field-desc">Multi-line text</div>
+                    </div>
+                </div>
+
+                <div class="field-item" draggable="true" data-type="select">
+                    <div class="field-icon" style="background: linear-gradient(135deg, #8b5cf6, #a855f7);">📋</div>
+                    <div class="field-info">
+                        <div class="field-name">Dropdown</div>
+                        <div class="field-desc">Select options</div>
+                    </div>
+                </div>
+
+                <div class="field-item" draggable="true" data-type="radio">
+                    <div class="field-icon" style="background: linear-gradient(135deg, #10b981, #14b8a6);">🔘</div>
+                    <div class="field-info">
+                        <div class="field-name">Radio Buttons</div>
+                        <div class="field-desc">Single choice</div>
+                    </div>
+                </div>
+
+                <div class="field-item" draggable="true" data-type="checkbox">
+                    <div class="field-icon" style="background: linear-gradient(135deg, #06b6d4, #0ea5e9);">☑️</div>
+                    <div class="field-info">
+                        <div class="field-name">Checkbox</div>
+                        <div class="field-desc">Multiple choice</div>
+                    </div>
+                </div>
+
+                <div class="field-item" draggable="true" data-type="date">
+                    <div class="field-icon" style="background: linear-gradient(135deg, #f43f5e, #ef4444);">📅</div>
+                    <div class="field-info">
+                        <div class="field-name">Date</div>
+                        <div class="field-desc">Date picker</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Canvas -->
+        <div class="canvas">
+            <div class="canvas-inner" id="canvas">
+                <div class="canvas-placeholder">
+                    <div class="canvas-placeholder-icon">🎨</div>
+                    <h3>Drag fields here to build your form</h3>
+                    <p style="margin-top: 0.5rem; font-size: 0.875rem;">Start by dragging field types from the left panel</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Properties Panel -->
+        <div class="properties-panel" id="propertiesPanel">
+            <div class="empty-state">
+                <div class="empty-state-icon">⚙️</div>
+                <h4>No field selected</h4>
+                <p style="font-size: 0.875rem; margin-top: 0.5rem;">Click on a field to edit its properties</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <h2 id="modalTitle">Form Preview</h2>
+            <div id="modalContent"></div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="modalClose">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State management
+        let formElements = [];
+        let selectedElement = null;
+        let elementIdCounter = 0;
+
+        // DOM Elements
+        const canvas = document.getElementById('canvas');
+        const propertiesPanel = document.getElementById('propertiesPanel');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const modalContent = document.getElementById('modalContent');
+        const modalTitle = document.getElementById('modalTitle');
+
+        // Field Templates
+        const fieldTemplates = {
+            text: {
+                type: 'text',
+                label: 'Text Input',
+                placeholder: 'Enter text',
+                required: false
+            },
+            email: {
+                type: 'email',
+                label: 'Email Address',
+                placeholder: 'your@email.com',
+                required: false
+            },
+            number: {
+                type: 'number',
+                label: 'Number',
+                placeholder: '0',
+                required: false
+            },
+            textarea: {
+                type: 'textarea',
+                label: 'Text Area',
+                placeholder: 'Enter detailed text',
+                required: false,
+                rows: 4
+            },
+            select: {
+                type: 'select',
+                label: 'Dropdown',
+                options: ['Option 1', 'Option 2', 'Option 3'],
+                required: false
+            },
+            radio: {
+                type: 'radio',
+                label: 'Radio Buttons',
+                options: ['Option 1', 'Option 2', 'Option 3'],
+                required: false
+            },
+            checkbox: {
+                type: 'checkbox',
+                label: 'Checkboxes',
+                options: ['Option 1', 'Option 2', 'Option 3'],
+                required: false
+            },
+            date: {
+                type: 'date',
+                label: 'Date',
+                required: false
+            }
+        };
+
+        // Drag and Drop for Palette Items
+        document.querySelectorAll('.field-item').forEach(item => {
+            item.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('fieldType', e.target.dataset.type);
+                e.dataTransfer.effectAllowed = 'copy';
+            });
+        });
+
+        canvas.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+            canvas.classList.add('drag-over');
+        });
+
+        canvas.addEventListener('dragleave', () => {
+            canvas.classList.remove('drag-over');
+        });
+
+        canvas.addEventListener('drop', (e) => {
+            e.preventDefault();
+            canvas.classList.remove('drag-over');
+            const fieldType = e.dataTransfer.getData('fieldType');
+            if (fieldType) {
+                addField(fieldType);
+            }
+        });
+
+        // Add Field
+        function addField(type) {
+            const template = { ...fieldTemplates[type] };
+            const element = {
+                id: ++elementIdCounter,
+                ...template
+            };
+            formElements.push(element);
+            renderCanvas();
+            selectElement(element.id);
+        }
+
+        // Render Canvas
+        function renderCanvas() {
+            if (formElements.length === 0) {
+                canvas.innerHTML = `
+                    <div class="canvas-placeholder">
+                        <div class="canvas-placeholder-icon">🎨</div>
+                        <h3>Drag fields here to build your form</h3>
+                        <p style="margin-top: 0.5rem; font-size: 0.875rem;">Start by dragging field types from the left panel</p>
+                    </div>
+                `;
+                return;
+            }
+
+            canvas.innerHTML = formElements.map(el => renderElement(el)).join('');
+
+            // Add click listeners
+            document.querySelectorAll('.form-element').forEach(el => {
+                el.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectElement(parseInt(el.dataset.id));
+                });
+            });
+
+            // Add delete listeners
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteElement(parseInt(btn.dataset.id));
+                });
+            });
+        }
+
+        // Render Element
+        function renderElement(el) {
+            const isSelected = selectedElement === el.id;
+            let inputHtml = '';
+
+            switch (el.type) {
+                case 'textarea':
+                    inputHtml = `<textarea class="form-input form-textarea" placeholder="${el.placeholder}" ${el.required ? 'required' : ''}></textarea>`;
+                    break;
+                case 'select':
+                    inputHtml = `
+                        <select class="form-input form-select" ${el.required ? 'required' : ''}>
+                            <option value="">Select an option</option>
+                            ${el.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+                        </select>
+                    `;
+                    break;
+                case 'radio':
+                    inputHtml = el.options.map((opt, i) => `
+                        <div style="margin-bottom: 0.5rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="radio" name="field_${el.id}" value="${opt}" ${el.required && i === 0 ? 'required' : ''}>
+                                <span>${opt}</span>
+                            </label>
+                        </div>
+                    `).join('');
+                    break;
+                case 'checkbox':
+                    inputHtml = el.options.map(opt => `
+                        <div style="margin-bottom: 0.5rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" name="field_${el.id}" value="${opt}">
+                                <span>${opt}</span>
+                            </label>
+                        </div>
+                    `).join('');
+                    break;
+                default:
+                    inputHtml = `<input type="${el.type}" class="form-input" placeholder="${el.placeholder}" ${el.required ? 'required' : ''}>`;
+            }
+
+            return `
+                <div class="form-element ${isSelected ? 'selected' : ''}" data-id="${el.id}">
+                    <div class="form-element-header">
+                        <div class="form-element-label">${el.label}${el.required ? ' *' : ''}</div>
+                        <div class="form-element-actions">
+                            <button class="icon-btn delete-btn" data-id="${el.id}">🗑️</button>
+                        </div>
+                    </div>
+                    ${inputHtml}
+                </div>
+            `;
+        }
+
+        // Select Element
+        function selectElement(id) {
+            selectedElement = id;
+            renderCanvas();
+            renderProperties();
+        }
+
+        // Delete Element
+        function deleteElement(id) {
+            formElements = formElements.filter(el => el.id !== id);
+            if (selectedElement === id) {
+                selectedElement = null;
+            }
+            renderCanvas();
+            renderProperties();
+        }
+
+        // Render Properties Panel
+        function renderProperties() {
+            if (!selectedElement) {
+                propertiesPanel.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">⚙️</div>
+                        <h4>No field selected</h4>
+                        <p style="font-size: 0.875rem; margin-top: 0.5rem;">Click on a field to edit its properties</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const element = formElements.find(el => el.id === selectedElement);
+            if (!element) return;
+
+            let propertiesHtml = `
+                <h3>Field Properties</h3>
+                
+                <div class="property-group">
+                    <label class="property-label">Label</label>
+                    <input type="text" class="property-input" id="prop-label" value="${element.label}">
+                </div>
+            `;
+
+            if (['text', 'email', 'number', 'textarea'].includes(element.type)) {
+                propertiesHtml += `
+                    <div class="property-group">
+                        <label class="property-label">Placeholder</label>
+                        <input type="text" class="property-input" id="prop-placeholder" value="${element.placeholder}">
+                    </div>
+                `;
+            }
+
+            if (['select', 'radio', 'checkbox'].includes(element.type)) {
+                propertiesHtml += `
+                    <div class="property-group">
+                        <label class="property-label">Options (comma-separated)</label>
+                        <input type="text" class="property-input" id="prop-options" value="${element.options.join(', ')}">
+                    </div>
+                `;
+            }
+
+            propertiesHtml += `
+                <div class="property-group">
+                    <label class="property-label">Required Field</label>
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" id="prop-required" ${element.required ? 'checked' : ''}>
+                        <label for="prop-required">Make this field required</label>
+                    </div>
+                </div>
+            `;
+
+            propertiesPanel.innerHTML = propertiesHtml;
+
+            // Add listeners
+            document.getElementById('prop-label')?.addEventListener('input', (e) => {
+                element.label = e.target.value;
+                renderCanvas();
+            });
+
+            document.getElementById('prop-placeholder')?.addEventListener('input', (e) => {
+                element.placeholder = e.target.value;
+                renderCanvas();
+            });
+
+            document.getElementById('prop-options')?.addEventListener('input', (e) => {
+                element.options = e.target.value.split(',').map(opt => opt.trim()).filter(opt => opt);
+                renderCanvas();
+            });
+
+            document.getElementById('prop-required')?.addEventListener('change', (e) => {
+                element.required = e.target.checked;
+                renderCanvas();
+            });
+        }
+
+        // Clear All
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            if (confirm('Are you sure you want to clear all fields?')) {
+                formElements = [];
+                selectedElement = null;
+                renderCanvas();
+                renderProperties();
+            }
+        });
+
+        // Preview
+        document.getElementById('previewBtn').addEventListener('click', () => {
+            modalTitle.textContent = 'Form Preview';
+            const formHtml = `
+                <form style="background: var(--bg-elevated); padding: 2rem; border-radius: 0.75rem;">
+                    ${formElements.map(el => renderElement(el)).join('')}
+                    <button type="submit" class="btn btn-primary" style="margin-top: 1.5rem;">Submit Form</button>
+                </form>
+            `;
+            modalContent.innerHTML = formHtml;
+            modalOverlay.classList.add('active');
+        });
+
+        // Export HTML
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            modalTitle.textContent = 'Export HTML Code';
+            const html = generateHTML();
+            modalContent.innerHTML = `<div class="code-preview">${escapeHtml(html)}</div>`;
+            modalOverlay.classList.add('active');
+        });
+
+        // Generate HTML
+        function generateHTML() {
+            let html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generated Form</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; max-width: 600px; margin: 2rem auto; padding: 0 1rem; }
+        .form-group { margin-bottom: 1.5rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
+        input, textarea, select { width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 0.5rem; font-family: inherit; }
+        textarea { resize: vertical; }
+        button { background: #6366f1; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 0.5rem; cursor: pointer; font-weight: 600; }
+        button:hover { background: #4f46e5; }
+    </style>
+</head>
+<body>
+    <form id="generatedForm">
+`;
+
+            formElements.forEach(el => {
+                html += `        <div class="form-group">\n`;
+                html += `            <label>${el.label}${el.required ? ' *' : ''}</label>\n`;
+
+                switch (el.type) {
+                    case 'textarea':
+                        html += `            <textarea name="field_${el.id}" placeholder="${el.placeholder}" ${el.required ? 'required' : ''}></textarea>\n`;
+                        break;
+                    case 'select':
+                        html += `            <select name="field_${el.id}" ${el.required ? 'required' : ''}>\n`;
+                        html += `                <option value="">Select an option</option>\n`;
+                        el.options.forEach(opt => {
+                            html += `                <option value="${opt}">${opt}</option>\n`;
+                        });
+                        html += `            </select>\n`;
+                        break;
+                    case 'radio':
+                        el.options.forEach(opt => {
+                            html += `            <div><label><input type="radio" name="field_${el.id}" value="${opt}" ${el.required ? 'required' : ''}> ${opt}</label></div>\n`;
+                        });
+                        break;
+                    case 'checkbox':
+                        el.options.forEach(opt => {
+                            html += `            <div><label><input type="checkbox" name="field_${el.id}" value="${opt}"> ${opt}</label></div>\n`;
+                        });
+                        break;
+                    default:
+                        html += `            <input type="${el.type}" name="field_${el.id}" placeholder="${el.placeholder}" ${el.required ? 'required' : ''}>\n`;
+                }
+
+                html += `        </div>\n`;
+            });
+
+            html += `        <button type="submit">Submit</button>\n`;
+            html += `    </form>\n`;
+            html += `</body>\n`;
+            html += `</html>`;
+
+            return html;
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // Close Modal
+        document.getElementById('modalClose').addEventListener('click', () => {
+            modalOverlay.classList.remove('active');
+        });
+
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                modalOverlay.classList.remove('active');
+            }
+        });
+
+        // Initialize
+        renderCanvas();
+        renderProperties();
+    </script>
+</body>
+</html>
